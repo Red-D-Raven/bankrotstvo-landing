@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <!-- Жесткий запрет на масштабирование (app-like feel) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Банкротство граждан | Законное освобождение от долгов</title>
+    
+    <!-- Иконка для вкладки браузера (Favicon) -->
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@700;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Merriweather', 'serif'],
+                    },
+                    colors: {
+                        primary: '#0f172a',    // Темный сланец
+                        brand: '#1d4ed8',      // Синий
+                        accent: '#b45309',     // Янтарный/Золотой
+                        bgLight: '#f8fafc',    // Очень светлый серый (чистый)
+                    },
+                    boxShadow: {
+                        'premium': '0 10px 40px -10px rgba(15, 23, 42, 0.08)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        html { scroll-behavior: smooth; }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .btn-action {
+            background-color: #b45309;
+            color: white;
+            transition: all 0.3s ease-in-out;
+            position: relative;
+            box-shadow: 0 4px 14px 0 rgba(180, 83, 9, 0.39);
+        }
+        .btn-action:hover {
+            background-color: #92400e;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(180, 83, 9, 0.23);
+        }
+        
+        .modern-scroll {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            gap: 1.25rem;
+            padding-bottom: 1rem;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; 
+            -ms-overflow-style: none; 
+        }
+        .modern-scroll::-webkit-scrollbar {
+            display: none; 
+        }
+        .review-card {
+            scroll-snap-align: center;
+            width: 85%;
+            min-width: 280px;
+            max-width: 340px;
+            flex-shrink: 0;
+        }
+
+        /* Адаптивная круговая диаграмма (скрыта на мобильных) */
+        .wheel-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 2rem auto;
+            border-radius: 50%;
+        }
+        @media (min-width: 768px) {
+            .wheel-container { width: 360px; height: 360px; }
+        }
+        
+        .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 170px;
+            height: 170px;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 1.25rem;
+            z-index: 10;
+            border: 4px solid #f8fafc;
+            transition: all 0.3s ease;
+        }
+        @media (min-width: 768px) {
+            .wheel-center { width: 220px; height: 220px; padding: 1.5rem; }
+        }
+        
+        .wheel-node {
+            position: absolute;
+            width: 3.5rem;
+            height: 3.5rem;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1d4ed8;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 10px -1px rgba(0, 0, 0, 0.1);
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s, color 0.2s;
+            z-index: 5;
+            transform: translate(-50%, -50%);
+        }
+        .wheel-node:hover, .wheel-node.active {
+            transform: translate(-50%, -50%) scale(1.15);
+            background: #1d4ed8;
+            color: white;
+            border-color: #1d4ed8;
+        }
+        .wheel-line {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            border: 1.5px dashed #cbd5e1;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+        }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .modal-scroll::-webkit-scrollbar { display: none; }
+        
+        .neat-input {
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            transition: all 0.2s;
+            position: relative;
+            z-index: 10;
+            /* Важно для iOS Safari: предотвращает авто-зум */
+            font-size: 16px !important; 
+        }
+        .neat-input:focus {
+            background-color: #ffffff;
+            border-color: #1d4ed8;
+            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+            outline: none;
+        }
+    </style>
+
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+        (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+        })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=108692091', 'ym');
+        ym(108692091, 'init', {
+            ssr:true, 
+            webvisor:true, 
+            clickmap:true, 
+            ecommerce:"dataLayer",
+            referrer: document.referrer, 
+            url: location.href, 
+            accurateTrackBounce:true, 
+            trackLinks:true
+        });
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/108692091" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- /Yandex.Metrika counter -->
+</head>
+<!-- Добавлено overflow-x-hidden для предотвращения случайного скролла вбок -->
+<body class="font-sans text-slate-800 bg-bgLight antialiased flex flex-col min-h-screen pb-20 lg:pb-0 overflow-x-hidden w-full">
+
+    <!-- Header -->
+    <header class="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-14 md:h-20">
+                
+                <div class="flex-shrink-0 flex items-center gap-3">
+                    <div class="w-8 h-8 md:w-10 md:h-10 bg-brand text-white rounded-lg md:rounded-xl flex items-center justify-center text-lg md:text-xl shadow-sm">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-serif font-bold text-xs md:text-base text-primary uppercase tracking-tight leading-tight">Банкротство<br>граждан</span>
+                    </div>
+                </div>
+
+                <!-- Контакты для Десктопа -->
+                <div class="hidden lg:flex items-center space-x-6">
+                    <div class="flex items-center gap-4 border-r border-slate-200 pr-6">
+                        <a href="https://t.me/rusinovarbitr" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-[#0088cc] transition-colors text-2xl"><i class="fa-brands fa-telegram"></i></a>
+                        <a href="https://vk.com/rusinovarbitr" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-[#0077FF] transition-colors text-2xl"><i class="fa-brands fa-vk"></i></a>
+                        <a href="https://max.ru/u/f9LHodD0cOJwqTv--7KUU0J1RscD1OD38TNVaEH-Y5ZjopwO1ZkIGn_adN8" target="_blank" rel="noopener noreferrer" class="transition-transform hover:scale-110">
+                            <!-- Оригинальная иконка приложения МАКС -->
+                            <img src="https://www.google.com/s2/favicons?domain=max.ru&sz=128" alt="MAX" class="w-6 h-6 rounded-md shadow-sm opacity-80 hover:opacity-100 transition-opacity">
+                        </a>
+                    </div>
+                    <div class="text-right">
+                        <a href="tel:+79965972977" class="block font-bold text-lg md:text-xl text-primary hover:text-brand transition-colors">+7 (996) 597-29-77</a>
+                        <div class="flex items-center justify-end gap-2 mt-0.5">
+                            <a href="tel:+73432410104" class="text-[11px] text-slate-500 hover:text-primary font-medium transition-colors">+7 (343) 241-01-04</a>
+                            <span class="text-slate-300 text-[10px]">|</span>
+                            <a href="tel:+79917790166" class="text-[11px] text-slate-500 hover:text-primary font-medium transition-colors">+7 (991) 779-01-66</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Контакты для Мобильной версии (с иконками соцсетей) -->
+                <div class="lg:hidden flex items-center gap-3">
+                    <div class="flex items-center gap-3 mr-1">
+                        <a href="https://t.me/rusinovarbitr" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-[#0088cc] text-[20px]"><i class="fa-brands fa-telegram"></i></a>
+                        <a href="https://vk.com/rusinovarbitr" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-[#0077FF] text-[20px]"><i class="fa-brands fa-vk"></i></a>
+                        <a href="https://max.ru/u/f9LHodD0cOJwqTv--7KUU0J1RscD1OD38TNVaEH-Y5ZjopwO1ZkIGn_adN8" target="_blank" rel="noopener noreferrer">
+                            <!-- Оригинальная иконка приложения МАКС -->
+                            <img src="https://www.google.com/s2/favicons?domain=max.ru&sz=128" alt="MAX" class="w-[20px] h-[20px] rounded-[4px] shadow-sm">
+                        </a>
+                    </div>
+                    <a href="tel:+79965972977" class="w-8 h-8 bg-brand/10 text-brand rounded-lg flex items-center justify-center text-sm shrink-0">
+                        <i class="fa-solid fa-phone"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Фоновая картинка только для первого экрана -->
+    <div class="absolute top-0 left-0 w-full h-[500px] md:h-[540px] z-0 overflow-hidden pointer-events-none border-b border-slate-200">
+        <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('ФОН_ДЛЯ_ОСНОВЫ_1.jpg');"></div>
+        <div class="absolute inset-0 bg-slate-900/85"></div>
+    </div>
+
+    <!-- MAIN LAYOUT -->
+    <main class="relative z-10 w-full max-w-7xl mx-auto px-0 md:px-4 sm:px-6 lg:px-8 py-0 md:py-10 flex flex-col lg:flex-row gap-0 md:gap-10 items-start justify-between">
+        
+        <!-- ЛЕВАЯ КОЛОНКА (Контент) -->
+        <div class="w-full lg:w-[60%] flex flex-col gap-4 md:gap-8 bg-bgLight md:bg-transparent">
+            
+            <!-- 1. HERO CARD (Адаптив: на мобильных без скруглений и отступов сверху) -->
+            <div class="relative bg-slate-900 md:rounded-3xl overflow-hidden shadow-premium md:border border-slate-800">
+                <img src="ФОН_ДЛЯ_ОСНОВЫ_2.jpg" alt="Закон" class="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none mix-blend-luminosity">
+                
+                <div class="relative z-10 p-5 pt-8 md:p-10 text-white">
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-[10px] md:text-[11px] font-bold uppercase tracking-widest mb-4 md:mb-6 backdrop-blur-sm">
+                        <i class="fa-solid fa-gavel text-brand"></i> Процедура по ФЗ №127
+                    </div>
+                    
+                    <h1 class="text-[26px] leading-[1.2] sm:text-3xl md:text-4xl lg:text-[42px] font-serif font-bold md:leading-[1.15] mb-4 md:mb-5 drop-shadow-md">
+                        Помощь в законном освобождении от долгов <span class="dynamic-geo text-brand font-black">в Свердловской области</span>
+                    </h1>
+                    
+                    <p class="text-slate-300 text-[14px] md:text-base mb-6 md:mb-8 font-normal leading-relaxed max-w-lg drop-shadow-sm">
+                        Юридическое сопровождение процедуры банкротства. Помогаем остановить начисление штрафов и защитить ваши права перед кредиторами.
+                    </p>
+
+                    <div class="space-y-4 md:space-y-5">
+                        <div class="flex items-start gap-3 md:gap-4">
+                            <div class="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center shrink-0 backdrop-blur-sm"><i class="fa-solid fa-shield-halved text-white text-[10px] md:text-xs"></i></div>
+                            <div>
+                                <p class="text-white text-[15px] md:text-base font-bold mb-0.5 md:mb-1">Остановка взысканий</p>
+                                <p class="text-slate-400 text-[13px] md:text-sm leading-relaxed max-w-md">Приостанавливаются исполнительные производства и звонки коллекторов.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 md:gap-4">
+                            <div class="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center shrink-0 backdrop-blur-sm"><i class="fa-solid fa-scale-balanced text-white text-[10px] md:text-xs"></i></div>
+                            <div>
+                                <p class="text-white text-[15px] md:text-base font-bold mb-0.5 md:mb-1">Защита интересов</p>
+                                <p class="text-slate-400 text-[13px] md:text-sm leading-relaxed max-w-md">Законно сохраняем ваш доход в рамках прожиточного минимума и единственное жилье.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Форма для МОБИЛЬНЫХ (дубликат-кнопка) - С отступами -->
+            <div class="lg:hidden mx-4 relative bg-white rounded-2xl shadow-premium border border-slate-200 overflow-hidden text-center p-5">
+                <div class="relative z-10">
+                    <h3 class="text-lg font-bold text-primary leading-tight mb-2">Оцените шансы на списание<span class="dynamic-geo text-brand"></span></h3>
+                    <p class="text-slate-500 text-[13px] mb-4">Ответьте на несколько вопросов для правового анализа</p>
+                    <button onclick="openLeadModal()" class="w-full btn-action py-3.5 rounded-xl font-bold text-[16px] shadow-lg shadow-amber-700/20">Пройти бесплатный анализ</button>
+                </div>
+            </div>
+
+            <!-- 2. АГИТАЦИЯ (Знакомая ситуация) -->
+            <div class="relative bg-white md:rounded-3xl shadow-premium md:border border-slate-200 px-5 py-6 md:p-8 overflow-hidden">
+                <div class="grid md:grid-cols-2 gap-5 md:gap-6 relative z-10">
+                    <div class="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                        <h3 class="text-primary font-bold text-[16px] mb-4 flex items-center gap-2"><i class="fa-solid fa-circle-exclamation text-brand text-lg"></i> Знакомая ситуация?</h3>
+                        <ul class="space-y-3 text-slate-700 text-[14px] leading-snug">
+                            <li class="flex items-start gap-2.5"><i class="fa-solid fa-phone-volume text-red-500 mt-0.5 shrink-0 text-xs"></i> <span>Постоянные изнуряющие звонки от кредиторов <b>вам, родственникам и на работу</b>.</span></li>
+                            <li class="flex items-start gap-2.5"><i class="fa-solid fa-money-bill-trend-up text-red-500 mt-0.5 shrink-0 text-xs"></i> <span>Долг растет из-за скрытых штрафов и огромных пени.</span></li>
+                            <li class="flex items-start gap-2.5"><i class="fa-solid fa-lock text-red-500 mt-0.5 shrink-0 text-xs"></i> <span>Удержания до 50% из зарплаты, блокировка счетов.</span></li>
+                            <li class="flex items-start gap-2.5"><i class="fa-solid fa-house-crack text-red-500 mt-0.5 shrink-0 text-xs"></i> <span>Страх потери имущества (жилья, авто) за долги.</span></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-blue-50/70 rounded-2xl p-5 border border-blue-100">
+                        <h3 class="text-primary font-bold text-[16px] mb-4 flex items-center gap-2"><i class="fa-solid fa-file-shield text-brand text-lg"></i> По закону №127-ФЗ:</h3>
+                        <ul class="space-y-3 text-slate-700 text-[14px] leading-snug font-medium">
+                            <li class="flex items-start gap-2.5"><i class="fa-solid fa-check text-brand mt-0.5 shrink-0"></i> <span>Официальное признание несостоятельности судом.</span></li>
+                            <li class="flex items-start gap-2.5"><i class="fa-solid fa-check text-brand mt-0.5 shrink-0"></i> <span>Полное прекращение начисления неустоек и звонков.</span></li>
+                            <li class="flex items-start gap-2.5"><i class="fa-solid fa-check text-brand mt-0.5 shrink-0"></i> <span>Снятие арестов со счетов по завершении процедуры.</span></li>
+                            <li class="flex items-start gap-2.5"><i class="fa-solid fa-check text-brand mt-0.5 shrink-0"></i> <span>Законные механизмы сохранения жилья и доходов.</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. ИНТЕРАКТИВНАЯ КРУГОВАЯ ДИАГРАММА / МОБИЛЬНЫЙ СПИСОК (УТП) -->
+            <div class="relative bg-gradient-to-br from-blue-50 to-slate-100 md:rounded-3xl shadow-premium md:border border-blue-100 px-5 py-6 md:p-10 overflow-hidden">
+                <div class="relative z-10 text-center mb-4 md:mb-6">
+                    <h2 class="text-xl md:text-2xl font-serif font-bold text-primary mb-2 leading-tight">Хотите избавиться от долгов быстро и без лишних расходов?</h2>
+                    <p class="hidden md:block text-[13px] md:text-sm text-slate-500 max-w-xl mx-auto">Наведите на иконки (или нажмите), чтобы узнать преимущества работы без посредников.</p>
+                </div>
+
+                <!-- ДЕСКТОП: Колесо -->
+                <div class="hidden md:block wheel-container relative z-10">
+                    <div class="wheel-line border-blue-200"></div>
+                    <div class="wheel-center" id="wheelCenter">
+                        <i class="fa-solid fa-handshake text-3xl md:text-4xl text-brand mb-2 opacity-80" id="wheelCenterIcon"></i>
+                        <h4 class="font-bold text-[13px] md:text-base text-primary mb-1 leading-tight" id="wheelCenterTitle">Банкротство напрямую</h4>
+                        <p class="text-[10px] md:text-xs text-slate-500 leading-tight" id="wheelCenterDesc">от арбитражного управляющего</p>
+                    </div>
+
+                    <div class="wheel-node" style="top: 0%; left: 50%;" data-icon="fa-wallet" data-title="Максимальная экономия" data-desc="Цена ниже, чем у юрфирм, потому что вы работаете напрямую с арбитражным управляющим."><i class="fa-solid fa-wallet"></i></div>
+                    <div class="wheel-node" style="top: 25%; left: 93.3%;" data-icon="fa-file-contract" data-title="Полная прозрачность" data-desc="Всё включено в договор (депозит АУ, публикации, издержки). Никаких скрытых доплат."><i class="fa-solid fa-file-contract"></i></div>
+                    <div class="wheel-node" style="top: 75%; left: 93.3%;" data-icon="fa-gavel" data-title="Без бюрократии" data-desc="Не нужна доверенность на юриста. Управляющий назначается судом и ведёт дело независимо."><i class="fa-solid fa-gavel"></i></div>
+                    <div class="wheel-node" style="top: 100%; left: 50%;" data-icon="fa-stamp" data-title="Гарантированный результат" data-desc="Списание долгов по итогам процедуры (при отсутствии признаков недобросовестности)."><i class="fa-solid fa-stamp"></i></div>
+                    <div class="wheel-node" style="top: 75%; left: 6.7%;" data-icon="fa-shield-halved" data-title="Сложные случаи" data-desc="Эффективное решение вопросов с имуществом, оспариванием сделок, защитой активов."><i class="fa-solid fa-shield-halved"></i></div>
+                    <div class="wheel-node" style="top: 25%; left: 6.7%;" data-icon="fa-stopwatch" data-title="Оптимизированные сроки" data-desc="Процедура проходит быстрее за счёт прямого взаимодействия и опыта управляющего."><i class="fa-solid fa-stopwatch"></i></div>
+                </div>
+
+                <!-- МОБИЛЬНЫЙ: Вертикальный список (app-like) -->
+                <div class="md:hidden space-y-3 relative z-10 mt-6">
+                    <div class="bg-white/90 backdrop-blur-sm border border-slate-200 rounded-2xl p-4 flex items-start gap-4 shadow-sm">
+                        <div class="w-10 h-10 rounded-full bg-blue-50 text-brand flex items-center justify-center shrink-0 text-lg"><i class="fa-solid fa-wallet"></i></div>
+                        <div>
+                            <h4 class="font-bold text-[15px] text-primary mb-1">Максимальная экономия</h4>
+                            <p class="text-[13px] text-slate-600 leading-snug">Цена ниже, так как вы работаете напрямую с арбитражным управляющим.</p>
+                        </div>
+                    </div>
+                    <div class="bg-white/90 backdrop-blur-sm border border-slate-200 rounded-2xl p-4 flex items-start gap-4 shadow-sm">
+                        <div class="w-10 h-10 rounded-full bg-blue-50 text-brand flex items-center justify-center shrink-0 text-lg"><i class="fa-solid fa-file-contract"></i></div>
+                        <div>
+                            <h4 class="font-bold text-[15px] text-primary mb-1">Полная прозрачность</h4>
+                            <p class="text-[13px] text-slate-600 leading-snug">Всё включено в договор (депозит АУ, издержки). Никаких скрытых доплат.</p>
+                        </div>
+                    </div>
+                    <div class="bg-white/90 backdrop-blur-sm border border-slate-200 rounded-2xl p-4 flex items-start gap-4 shadow-sm">
+                        <div class="w-10 h-10 rounded-full bg-blue-50 text-brand flex items-center justify-center shrink-0 text-lg"><i class="fa-solid fa-stamp"></i></div>
+                        <div>
+                            <h4 class="font-bold text-[15px] text-primary mb-1">Гарантированный результат</h4>
+                            <p class="text-[13px] text-slate-600 leading-snug">Списание долгов по итогам процедуры (при отсутствии недобросовестности).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 md:mt-8 relative z-10 bg-white/80 backdrop-blur-sm border border-green-200 rounded-2xl p-4 text-center max-w-lg mx-auto shadow-sm">
+                    <p class="text-[14px] md:text-[15px] font-bold text-green-700 leading-snug"><i class="fa-solid fa-circle-check mr-1.5 md:mr-2 text-green-600"></i>Результат: вы освобождаетесь от долгов с минимальными затратами времени, нервов и денег.</p>
+                </div>
+            </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const nodes = document.querySelectorAll('.wheel-node');
+                    const cTitle = document.getElementById('wheelCenterTitle');
+                    const cDesc = document.getElementById('wheelCenterDesc');
+                    const cIcon = document.getElementById('wheelCenterIcon');
+                    const dTitle = "Банкротство напрямую";
+                    const dDesc = "от арбитражного управляющего";
+                    const dIcon = "fa-handshake";
+
+                    function updateCenter(node) {
+                        nodes.forEach(n => n.classList.remove('active'));
+                        if (node) {
+                            node.classList.add('active');
+                            cTitle.classList.remove('fade-in'); cDesc.classList.remove('fade-in'); cIcon.classList.remove('fade-in');
+                            void cTitle.offsetWidth;
+                            cTitle.textContent = node.getAttribute('data-title');
+                            cDesc.textContent = node.getAttribute('data-desc');
+                            cIcon.className = `fa-solid ${node.getAttribute('data-icon')} text-3xl md:text-4xl text-brand mb-1 md:mb-2 opacity-100 fade-in`;
+                            cTitle.classList.add('fade-in'); cDesc.classList.add('fade-in');
+                        } else {
+                            cTitle.textContent = dTitle; cDesc.textContent = dDesc;
+                            cIcon.className = `fa-solid ${dIcon} text-3xl md:text-4xl text-brand mb-1 md:mb-2 opacity-80`;
+                        }
+                    }
+
+                    nodes.forEach(node => {
+                        node.addEventListener('mouseenter', () => updateCenter(node));
+                        node.addEventListener('mouseleave', () => updateCenter(null));
+                        node.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            if (node.classList.contains('active')) updateCenter(null);
+                            else updateCenter(node);
+                        });
+                    });
+                });
+            </script>
+
+            <!-- 4. ИНФОГРАФИКА: ЭТАПЫ (Обновленные тексты) -->
+            <div class="relative bg-white md:rounded-3xl shadow-premium md:border border-slate-200 px-5 py-6 md:p-8 overflow-hidden">
+                <div class="relative z-10 text-center mb-5 md:mb-6">
+                    <h2 class="text-xl md:text-2xl font-serif font-bold text-primary mb-1">Этапы работы</h2>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
+                    <!-- Этап 1 -->
+                    <div class="bg-slate-50 p-4 md:p-5 rounded-xl md:rounded-2xl border border-slate-100">
+                        <div class="text-[11px] font-bold text-brand uppercase mb-1 md:mb-2">2-3 недели</div>
+                        <h4 class="font-bold text-sm md:text-[15px] text-primary mb-1 md:mb-2">Подготовка</h4>
+                        <p class="text-[13px] md:text-[14px] text-slate-700 leading-snug">Сбор всех необходимых справок, выписок и составление обоснованного заявления. Всю бумажную и юридическую рутину мы полностью берем на себя — вам не придется ходить по инстанциям.</p>
+                    </div>
+                    
+                    <!-- Этап 2 -->
+                    <div class="bg-slate-50 p-4 md:p-5 rounded-xl md:rounded-2xl border border-slate-100 relative">
+                        <div class="text-[11px] font-bold text-brand uppercase mb-1 md:mb-2">До 1 месяца</div>
+                        <h4 class="font-bold text-sm md:text-[15px] text-primary mb-1 md:mb-2">Первое заседание</h4>
+                        <p class="text-[13px] md:text-[14px] text-slate-700 leading-snug">Подача документов в суд и старт официального процесса. За вами закрепляется финансовый управляющий, который будет действовать в рамках закона для защиты ваших интересов.</p>
+                    </div>
+
+                    <!-- Этап 3 -->
+                    <div class="bg-slate-50 p-4 md:p-5 rounded-xl md:rounded-2xl border border-slate-100">
+                        <div class="text-[11px] font-bold text-brand uppercase mb-1 md:mb-2">До 5 месяцев</div>
+                        <h4 class="font-bold text-sm md:text-[15px] text-primary mb-1 md:mb-2">Основной этап защиты</h4>
+                        <p class="text-[13px] md:text-[14px] text-slate-700 leading-snug">Остановка всех штрафов и пени. Звонки от банков и коллекторов полностью прекращаются. Пока суд проводит обязательные процедуры списания, мы берем под защиту ваши права: обеспечиваем сохранность имущества и вашего законного дохода.</p>
+                    </div>
+
+                    <!-- Этап 4 -->
+                    <div class="bg-green-50 p-4 md:p-5 rounded-xl md:rounded-2xl border border-green-100 shadow-sm">
+                        <div class="text-[11px] font-bold text-green-700 uppercase mb-1 md:mb-2">Итого: ~6 месяцев</div>
+                        <h4 class="font-bold text-sm md:text-[15px] text-primary mb-1 md:mb-2">Финальное заседание</h4>
+                        <p class="text-[13px] md:text-[14px] text-slate-800 leading-snug">Официальное списание всех задолженностей решением суда и полная разблокировка счетов. Вы никому ничего не должны и начинаете жизнь с чистого листа.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. ОТЗЫВЫ -->
+            <div class="relative bg-white md:rounded-3xl shadow-premium md:border border-slate-200 py-6 md:py-8 overflow-hidden">
+                <div class="relative z-10 px-5 sm:px-6 md:px-10 mb-4 md:mb-6 text-center">
+                    <h2 class="text-xl md:text-2xl font-serif font-bold text-primary inline-block bg-white/70 backdrop-blur-sm px-3 md:px-4 py-1 rounded-lg border border-white">Отзывы клиентов</h2>
+                    <p class="text-[13px] text-slate-400 mt-1 sm:hidden flex items-center justify-center gap-1.5">Листайте отзывы <i class="fa-solid fa-arrows-left-right text-[10px]"></i></p>
+                </div>
+
+                <div class="relative group z-10 w-full overflow-hidden">
+                    <div class="mask-edges">
+                        <div class="modern-scroll px-5 sm:px-6 md:px-10" id="reviewsContainer">
+                            
+                            <div class="review-card bg-white border border-slate-200 rounded-2xl p-5 md:p-6 flex flex-col shadow-sm">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <img src="client1.png" alt="Шамшимухаметов Дамир Рамильевич" class="w-10 h-10 md:w-11 md:h-11 rounded-full object-cover border border-slate-200 bg-slate-100 shrink-0">
+                                        <div>
+                                            <h4 class="font-bold text-primary text-[13px] md:text-[14px] leading-tight">Шамшимухаметов<br>Дамир Рамильевич</h4>
+                                            <div class="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wider font-bold">Дело А60-40455/2022</div>
+                                        </div>
+                                    </div>
+                                    <i class="fa-solid fa-quote-right text-slate-100 text-2xl md:text-3xl"></i>
+                                </div>
+                                <div class="text-[11px] md:text-xs font-bold text-brand mb-3 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-lg w-max">Долг: 1 050 298 руб.</div>
+                                <p class="text-slate-700 text-[13px] md:text-sm leading-relaxed italic">«Благодарю за оперативную работу! Я думал, что из-за моей машины процедура затянется, но нет. Быстро, всегда на связи. Рекомендую»</p>
+                            </div>
+
+                            <div class="review-card bg-white border border-slate-200 rounded-2xl p-5 md:p-6 flex flex-col shadow-sm">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <img src="client2.jpg" alt="Палкина Татьяна Викторовна" class="w-10 h-10 md:w-11 md:h-11 rounded-full object-cover border border-slate-200 bg-slate-100 shrink-0">
+                                        <div>
+                                            <h4 class="font-bold text-primary text-[13px] md:text-[14px] leading-tight">Палкина<br>Татьяна Викторовна</h4>
+                                            <div class="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wider font-bold">Дело А60-33160/2022</div>
+                                        </div>
+                                    </div>
+                                    <i class="fa-solid fa-quote-right text-slate-100 text-2xl md:text-3xl"></i>
+                                </div>
+                                <div class="text-[11px] md:text-xs font-bold text-brand mb-3 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-lg w-max">Долг: 2 165 156 руб.</div>
+                                <p class="text-slate-700 text-[13px] md:text-sm leading-relaxed italic">«Деньги брала на бизнес, но не пошло. Раз государство нам дает возможность списать долги, то почему бы ей не воспользоваться. Спасибо за возможность начать все сначала, сейчас у меня успешное свое дело. Я очень рада, что доверилась вам»</p>
+                            </div>
+
+                            <div class="review-card bg-white border border-slate-200 rounded-2xl p-5 md:p-6 flex flex-col shadow-sm">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <img src="client3.jpg" alt="Кирпищиков Антон Юрьевич" class="w-10 h-10 md:w-11 md:h-11 rounded-full object-cover border border-slate-200 bg-slate-100 shrink-0">
+                                        <div>
+                                            <h4 class="font-bold text-primary text-[13px] md:text-[14px] leading-tight">Кирпищиков<br>Антон Юрьевич</h4>
+                                            <div class="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wider font-bold">Дело А60-34501/2022</div>
+                                        </div>
+                                    </div>
+                                    <i class="fa-solid fa-quote-right text-slate-100 text-2xl md:text-3xl"></i>
+                                </div>
+                                <div class="text-[11px] md:text-xs font-bold text-brand mb-3 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-lg w-max">Долг: 2 169 847 руб.</div>
+                                <p class="text-slate-700 text-[13px] md:text-sm leading-relaxed italic">«Здравствуйте! Спасибо вам большое! Я ваш клиент. Три года уже живу спокойно и без кредитов . Спасибо»</p>
+                            </div>
+
+                            <div class="review-card bg-white border border-slate-200 rounded-2xl p-5 md:p-6 flex flex-col shadow-sm">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <img src="client4.png" alt="Аматова Эмилия Болтоновна" class="w-10 h-10 md:w-11 md:h-11 rounded-full object-cover border border-slate-200 bg-slate-100 shrink-0">
+                                        <div>
+                                            <h4 class="font-bold text-primary text-[13px] md:text-[14px] leading-tight">Аматова<br>Эмилия Болтоновна</h4>
+                                            <div class="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wider font-bold">Дело А60-42454/2022</div>
+                                        </div>
+                                    </div>
+                                    <i class="fa-solid fa-quote-right text-slate-100 text-2xl md:text-3xl"></i>
+                                </div>
+                                <div class="text-[11px] md:text-xs font-bold text-brand mb-3 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-lg w-max">Долг: 1 190 584 руб.</div>
+                                <p class="text-slate-700 text-[13px] md:text-sm leading-relaxed italic">«Я так сильно нервничала, мне было стыдно и страшно. Слава богу, что процедура прошла успешно, хотя меня успокаивали с первого дня работы. Рада, что доверилась. Живу и не боюсь больше.»</p>
+                            </div>
+
+                            <div class="review-card bg-white border border-slate-200 rounded-2xl p-5 md:p-6 flex flex-col shadow-sm">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <img src="client5.png" alt="Глинских Анатолий Валерьевич" class="w-10 h-10 md:w-11 md:h-11 rounded-full object-cover border border-slate-200 bg-slate-100 shrink-0">
+                                        <div>
+                                            <h4 class="font-bold text-primary text-[13px] md:text-[14px] leading-tight">Глинских<br>Анатолий Валерьевич</h4>
+                                            <div class="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wider font-bold">Дело А60-38884/2022</div>
+                                        </div>
+                                    </div>
+                                    <i class="fa-solid fa-quote-right text-slate-100 text-2xl md:text-3xl"></i>
+                                </div>
+                                <div class="text-[11px] md:text-xs font-bold text-brand mb-3 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-lg w-max">Долг: 1 512 702 руб.</div>
+                                <p class="text-slate-700 text-[13px] md:text-sm leading-relaxed italic">«Хочу сказать, Владимир, спасибо. Даже не пришлось приезжать в город, только за актом об окончании. Дистанционно, быстро, качественно.»</p>
+                            </div>
+
+                            <div class="review-card bg-white border border-slate-200 rounded-2xl p-5 md:p-6 flex flex-col shadow-sm">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <img src="client6.jpg" alt="Золотарев Дмитрий Александрович" class="w-10 h-10 md:w-11 md:h-11 rounded-full object-cover border border-slate-200 bg-slate-100 shrink-0">
+                                        <div>
+                                            <h4 class="font-bold text-primary text-[13px] md:text-[14px] leading-tight">Золотарев<br>Дмитрий Александрович</h4>
+                                            <div class="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wider font-bold">Дело А60-27983/2022</div>
+                                        </div>
+                                    </div>
+                                    <i class="fa-solid fa-quote-right text-slate-100 text-2xl md:text-3xl"></i>
+                                </div>
+                                <div class="text-[11px] md:text-xs font-bold text-brand mb-3 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-lg w-max">Долг: 1 343 655 руб.</div>
+                                <p class="text-slate-700 text-[13px] md:text-sm leading-relaxed italic">«Владимир мне понравился сразу. Я думал, что не подхожу под банкротство, изначально хотел помощи в реструктуризации долга, так как у меня было имущество. Владимир рассказал подробно, как лучше сделать. Удивил, что я могу списать долги. Живу уже два года без долгов и с имуществом»</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Стрелки по бокам (скрыты на мобилках) -->
+                    <button onclick="scrollReviews(-340)" class="absolute top-1/2 -translate-y-1/2 left-2 md:left-4 w-11 h-11 rounded-full border border-slate-200 shadow-md bg-white hover:bg-brand hover:text-white text-slate-600 flex items-center justify-center transition-all z-20 focus:outline-none hidden sm:flex">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <button onclick="scrollReviews(340)" class="absolute top-1/2 -translate-y-1/2 right-2 md:right-4 w-11 h-11 rounded-full border border-slate-200 shadow-md bg-white hover:bg-brand hover:text-white text-slate-600 flex items-center justify-center transition-all z-20 focus:outline-none hidden sm:flex">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <script>
+                function scrollReviews(amount) {
+                    const container = document.getElementById('reviewsContainer');
+                    if (container) container.scrollBy({ left: amount, behavior: 'smooth' });
+                }
+            </script>
+        </div>
+
+        <!-- ПРАВАЯ КОЛОНКА (ШИРОКАЯ ЛИПКАЯ ФОРМА) - СКРЫТА НА МОБИЛЬНЫХ -->
+        <div class="hidden lg:block w-[40%] shrink-0 sticky top-[88px] self-start">
+            <div class="relative bg-white rounded-3xl shadow-premium border border-slate-200 flex flex-col w-full overflow-hidden">
+                <div class="relative z-10 bg-slate-50 border-b border-slate-200 p-8 text-center shrink-0">
+                    <h3 class="text-[22px] font-bold text-primary leading-tight mb-2 break-words">
+                        Оцените шансы на списание<span class="dynamic-geo text-brand font-black"></span>
+                    </h3>
+                    <p class="text-slate-600 text-[14px] font-medium">Для бесплатного анализа вашей ситуации</p>
+                </div>
+
+                <div class="relative z-10 p-8 overflow-y-auto scrollbar-thin">
+                    <form id="leadForm" name="consultation" method="POST" class="space-y-5">
+                        
+                        <div>
+                            <label for="debt" class="block text-xs font-bold text-slate-800 mb-2 uppercase tracking-wide">Сумма долга?</label>
+                            <div class="relative">
+                                <!-- На десктопе 15px ок -->
+                                <select id="debt" name="debt" required class="neat-input w-full pl-4 pr-10 py-4 rounded-xl outline-none text-[15px] text-slate-800 appearance-none cursor-pointer shadow-sm">
+                                    <option value="" disabled selected>Укажите сумму...</option>
+                                    <option value="Менее 300 000 руб.">Менее 300 000 руб.</option>
+                                    <option value="От 300 до 500 тыс. руб.">От 300 000 до 500 000 руб.</option>
+                                    <option value="От 500 тыс. до 1 млн руб.">От 500 000 до 1 000 000 руб.</option>
+                                    <option value="Более 1 млн руб.">Более 1 000 000 руб.</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400 z-20"><i class="fa-solid fa-chevron-down text-xs"></i></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="delay" class="block text-xs font-bold text-slate-800 mb-2 uppercase tracking-wide">Срок просрочки (Кредиты, ЖКХ)?</label>
+                            <div class="relative">
+                                <select id="delay" name="delay" required class="neat-input w-full pl-4 pr-10 py-4 rounded-xl outline-none text-[15px] text-slate-800 appearance-none cursor-pointer shadow-sm">
+                                    <option value="" disabled selected>Время просрочки...</option>
+                                    <option value="Просрочек пока нет">Просрочек пока нет</option>
+                                    <option value="Менее 1 месяца">Менее 1 месяца</option>
+                                    <option value="От 1 до 3 месяцев">От 1 до 3 месяцев</option>
+                                    <option value="Более 3 месяцев">Более 3 месяцев</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400 z-20"><i class="fa-solid fa-chevron-down text-xs"></i></div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="property" class="block text-xs font-bold text-slate-800 mb-2 uppercase tracking-wide">Имущество?</label>
+                                <div class="relative">
+                                    <select id="property" name="property" required class="neat-input w-full pl-4 pr-8 py-4 rounded-xl outline-none text-[14px] text-slate-800 appearance-none cursor-pointer shadow-sm">
+                                        <option value="" disabled selected>Выбрать...</option>
+                                        <option value="Нет">Нет</option>
+                                        <option value="Только жилье">Только жилье</option>
+                                        <option value="Авто">Автомобиль</option>
+                                        <option value="Несколько">Квартира и авто</option>
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400 z-20"><i class="fa-solid fa-chevron-down text-[11px]"></i></div>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="mortgage" class="block text-xs font-bold text-slate-800 mb-2 uppercase tracking-wide">Ипотека?</label>
+                                <div class="relative">
+                                    <select id="mortgage" name="mortgage" required class="neat-input w-full pl-4 pr-8 py-4 rounded-xl outline-none text-[14px] text-slate-800 appearance-none cursor-pointer shadow-sm">
+                                        <option value="" disabled selected>Выбрать...</option>
+                                        <option value="Нет">Нет</option>
+                                        <option value="Да">Да, есть</option>
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400 z-20"><i class="fa-solid fa-chevron-down text-[11px]"></i></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 pt-4 border-t border-slate-200">
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 z-20"><i class="fa-regular fa-user text-base"></i></div>
+                                <input type="text" id="name" name="name" required placeholder="Ваше имя" class="neat-input w-full pl-12 pr-4 py-4 rounded-xl outline-none text-[15px] placeholder-slate-500 shadow-sm font-medium">
+                            </div>
+                            
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 z-20"><i class="fa-solid fa-phone text-base"></i></div>
+                                <input type="tel" id="phone" name="phone" required placeholder="+7 (999) 000-00-00" class="neat-input w-full pl-12 pr-4 py-4 rounded-xl outline-none text-[15px] placeholder-slate-500 shadow-sm font-medium">
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="w-full btn-action py-5 rounded-xl font-bold text-[17px] mt-4 shadow-lg shadow-amber-700/30 tracking-wide z-20 relative">
+                            Узнать шансы
+                        </button>
+
+                        <div class="flex items-start justify-center mt-4">
+                            <label class="flex items-start gap-2 cursor-pointer group rounded">
+                                <input id="consent" type="checkbox" required checked class="mt-[3px] w-4 h-4 text-brand bg-slate-100 border-slate-400 rounded focus:ring-brand cursor-pointer">
+                                <span class="text-xs text-slate-500 font-medium leading-tight">
+                                    Согласен на <a href="Согласие на обработку персональных данных.pdf" target="_blank" rel="noopener noreferrer" class="underline hover:text-slate-900">обработку данных</a>
+                                </span>
+                            </label>
+                        </div>
+                        
+                        <div id="formSuccessMessage" class="hidden p-4 bg-green-50 text-green-700 rounded-xl text-sm font-medium border border-green-200 text-center">
+                            Заявка отправлена. Мы свяжемся с вами.
+                        </div>
+                        <div id="formErrorMessage" class="hidden p-4 bg-red-50 text-red-700 rounded-xl text-sm font-medium border border-red-200 text-center">
+                            Ошибка. Пожалуйста, позвоните нам.
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white pt-8 pb-6 mt-auto w-full border-t border-slate-200 relative z-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 pb-6 border-b border-slate-100 gap-4">
+                <div class="flex items-center gap-3 text-primary">
+                    <div class="h-8 w-8 bg-slate-100 rounded flex items-center justify-center text-slate-600 text-sm">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                    </div>
+                    <div class="font-serif font-bold text-sm uppercase tracking-tight">Банкротство граждан</div>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="text-slate-500 text-[13px] md:text-xs flex flex-wrap justify-center gap-x-5 gap-y-2 font-medium">
+                        <span>ИП Вайкмаа Г. В.</span>
+                        <span>ИНН 563500339825</span>
+                        <span>urrus.legal@mail.ru</span>
+                    </div>
+                    <!-- Дополнительные номера телефонов в футере -->
+                    <div class="text-slate-600 text-[13px] md:text-sm flex flex-wrap justify-center gap-x-4 gap-y-2 mt-2 font-bold">
+                        <a href="tel:+79965972977" class="hover:text-brand transition-colors">+7 (996) 597-29-77</a>
+                        <a href="tel:+73432410104" class="hover:text-brand transition-colors">+7 (343) 241-01-04</a>
+                        <a href="tel:+79917790166" class="hover:text-brand transition-colors">+7 (991) 779-01-66</a>
+                    </div>
+                    <!-- Блок соцсетей для мобильных (видимый в подвале) -->
+                    <div class="flex justify-center gap-5 mt-4 lg:hidden">
+                        <a href="https://t.me/rusinovarbitr" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-[#0088cc] text-[22px]"><i class="fa-brands fa-telegram"></i></a>
+                        <a href="https://vk.com/rusinovarbitr" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-[#0077FF] text-[22px]"><i class="fa-brands fa-vk"></i></a>
+                        <a href="https://max.ru/u/f9LHodD0cOJwqTv--7KUU0J1RscD1OD38TNVaEH-Y5ZjopwO1ZkIGn_adN8" target="_blank" rel="noopener noreferrer">
+                            <img src="https://www.google.com/s2/favicons?domain=max.ru&sz=128" alt="MAX" class="w-[22px] h-[22px] rounded-[5px] shadow-sm opacity-80">
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mandatory Legal Disclaimer -->
+            <div class="text-center max-w-4xl mx-auto px-4">
+                <p class="text-[11px] md:text-[10px] text-slate-400 leading-snug md:text-center text-justify">
+                    Банкротство влечет негативные последствия, в том числе ограничения на получение кредита и повторное банкротство в течение пяти лет. Предварительно обратитесь к своему кредитору и в МФЦ. Информация на сайте не является публичной офертой.
+                </p>
+                <div class="flex flex-col sm:flex-row justify-center items-center gap-4 text-[11px] md:text-[10px] text-slate-400 mt-4 mb-3">
+                    <a href="Согласие на обработку персональных данных.pdf" target="_blank" class="hover:text-slate-600 hover:underline uppercase">Согласие на обработку</a>
+                    <span class="hidden sm:inline text-slate-300">|</span>
+                    <a href="ПОЛИТИКА ЗАЩИТЫ И ОБРАБОТКИ ПЕРСОНАЛЬНЫХ ДАННЫХ.pdf" target="_blank" class="hover:text-slate-600 hover:underline uppercase">Политика конфиденциальности</a>
+                </div>
+                <p class="text-[10px] md:text-[9px] text-slate-300 uppercase tracking-widest">&copy; 2026 Банкротство граждан.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Mobile Sticky Bottom Bar -->
+    <div class="lg:hidden fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 p-3 z-40 flex justify-center shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)] pb-safe">
+        <button onclick="openLeadModal()" class="w-full btn-action py-4 rounded-xl font-bold text-[16px] shadow-lg shadow-amber-700/20">
+            Оцените шансы на списание
+        </button>
+    </div>
+
+    <!-- Modal: Mobile Lead Form -->
+    <div id="leadModal" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-end justify-center p-0 sm:p-4 transition-opacity">
+        <div class="relative bg-white w-full sm:max-w-sm sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] rounded-t-2xl transform translate-y-full transition-transform duration-300" id="leadModalContent">
+            
+            <div class="relative z-10 bg-slate-50 border-b border-slate-200 p-5 flex justify-between items-center shrink-0">
+                <div>
+                    <h3 class="font-bold text-[18px] text-primary leading-tight px-1">Оценка ситуации<span class="dynamic-geo text-brand"></span></h3>
+                    <p class="text-slate-500 text-[13px] mt-1 px-1 font-medium">Ответьте на несколько вопросов</p>
+                </div>
+                <button onclick="closeLeadModal()" class="w-8 h-8 bg-slate-200 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-300 transition-colors ml-2 shrink-0">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="relative z-10 p-5 overflow-y-auto modal-scroll bg-white">
+                <form id="leadFormMobile" name="consultation" method="POST" class="space-y-4">
+                    
+                    <div>
+                        <label class="block text-[12px] font-bold text-slate-800 mb-1.5 uppercase tracking-wide">Сумма долга?</label>
+                        <div class="relative">
+                            <!-- font-size: 16px is forced via CSS to prevent iOS Safari auto-zoom on select click -->
+                            <select id="debtMobile" name="debt" required class="neat-input w-full pl-3 pr-8 py-3.5 rounded-xl outline-none transition-all text-slate-800 appearance-none shadow-sm">
+                                <option value="" disabled selected>Укажите сумму...</option>
+                                <option value="Менее 300 000 руб.">Менее 300 000 руб.</option>
+                                <option value="От 300 до 500 тыс. руб.">От 300 000 до 500 000 руб.</option>
+                                <option value="От 500 тыс. до 1 млн руб.">От 500 000 до 1 000 000 руб.</option>
+                                <option value="Более 1 млн руб.">Более 1 000 000 руб.</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none z-20"><i class="fa-solid fa-chevron-down text-[11px] text-slate-400"></i></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[12px] font-bold text-slate-800 mb-1.5 uppercase tracking-wide">Срок просрочки (Кредиты, ЖКХ)?</label>
+                        <div class="relative">
+                            <select id="delayMobile" name="delay" required class="neat-input w-full pl-3 pr-8 py-3.5 rounded-xl outline-none transition-all text-slate-800 appearance-none shadow-sm">
+                                <option value="" disabled selected>Время просрочки...</option>
+                                <option value="Просрочек пока нет">Просрочек пока нет</option>
+                                <option value="Менее 1 месяца">Менее 1 месяца</option>
+                                <option value="От 1 до 3 месяцев">От 1 до 3 месяцев</option>
+                                <option value="Более 3 месяцев">Более 3 месяцев</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none z-20"><i class="fa-solid fa-chevron-down text-[11px] text-slate-400"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-800 mb-1.5 uppercase tracking-wide">Имущество?</label>
+                            <div class="relative">
+                                <select id="propertyMobile" name="property" required class="neat-input w-full pl-3 pr-6 py-3.5 rounded-xl outline-none transition-all text-slate-800 appearance-none shadow-sm">
+                                    <option value="" disabled selected>Имущество...</option>
+                                    <option value="Нет">Нет</option>
+                                    <option value="Только жилье">Только жилье</option>
+                                    <option value="Авто">Автомобиль</option>
+                                    <option value="Несколько">Квартира и авто</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none z-20"><i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i></div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-800 mb-1.5 uppercase tracking-wide">Ипотека?</label>
+                            <div class="relative">
+                                <select id="mortgageMobile" name="mortgage" required class="neat-input w-full pl-3 pr-6 py-3.5 rounded-xl outline-none transition-all text-slate-800 appearance-none shadow-sm">
+                                    <option value="" disabled selected>Ипотека...</option>
+                                    <option value="Нет">Нет</option>
+                                    <option value="Да">Да, есть</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none z-20"><i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 space-y-3 border-t border-slate-200">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 z-20"><i class="fa-regular fa-user text-sm"></i></div>
+                            <input type="text" id="nameMobile" name="name" required placeholder="Ваше имя" class="neat-input w-full pl-10 pr-3 py-3.5 rounded-xl outline-none transition-all shadow-sm font-medium">
+                        </div>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 z-20"><i class="fa-solid fa-phone text-sm"></i></div>
+                            <input type="tel" id="phoneMobile" name="phone" required placeholder="+7 (999) 000-00-00" class="neat-input w-full pl-10 pr-3 py-3.5 rounded-xl outline-none transition-all shadow-sm font-medium">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full btn-action py-4 rounded-xl font-bold text-[16px] mt-2 shadow-lg shadow-amber-700/30">Получить анализ</button>
+
+                    <div class="flex justify-center mt-3">
+                        <label class="flex items-center gap-2 cursor-pointer rounded">
+                            <input type="checkbox" required checked class="w-4 h-4 text-brand bg-slate-100 border-slate-400 rounded focus:ring-brand">
+                            <span class="text-[11px] text-slate-500 font-medium">
+                                Согласен на <a href="Согласие на обработку персональных данных.pdf" target="_blank" rel="noopener noreferrer" class="underline hover:text-slate-900">обработку данных</a>
+                            </span>
+                        </label>
+                    </div>
+                    
+                    <div id="formSuccessMessageMobile" class="hidden p-3 bg-green-50 text-green-700 rounded-lg text-sm font-medium border border-green-200 mt-2 text-center">
+                        Заявка принята! Скоро свяжемся.
+                    </div>
+                    <div id="formErrorMessageMobile" class="hidden p-3 bg-red-50 text-red-700 rounded-lg text-sm font-medium border border-red-200 mt-2 text-center">
+                        Ошибка. Позвоните нам.
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.documentElement.style.setProperty('--sat', 'env(safe-area-inset-bottom)');
+        const pbSafe = document.querySelector('.pb-safe');
+        if(pbSafe) pbSafe.style.paddingBottom = 'calc(0.75rem + env(safe-area-inset-bottom))';
+
+        const leadModal = document.getElementById('leadModal');
+        const leadModalContent = document.getElementById('leadModalContent');
+        
+        function openLeadModal() {
+            leadModal.classList.remove('hidden');
+            setTimeout(() => {
+                leadModalContent.classList.remove('translate-y-full');
+                leadModalContent.classList.add('translate-y-0');
+            }, 10);
+            document.body.style.overflow = 'hidden'; 
+        }
+
+        function closeLeadModal() {
+            leadModalContent.classList.remove('translate-y-0');
+            leadModalContent.classList.add('translate-y-full');
+            setTimeout(() => {
+                leadModal.classList.add('hidden');
+                document.body.style.overflow = ''; 
+            }, 300);
+        }
+
+        leadModal.addEventListener('click', function(e) {
+            if (e.target === leadModal) closeLeadModal();
+        });
+
+        // === НАСТРОЙКИ TELEGRAM ===
+        const TG_BOT_TOKEN = "8562175023:AAEPVaxrfDDDMlriqT4IXZKFXhugQATiMxg"; 
+        const TG_CHAT_ID = "7032785753"; 
+
+        function setupFormSubmission(formId, successMsgId, errorMsgId) {
+            const form = document.getElementById(formId);
+            if (!form) return;
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const btn = form.querySelector('button[type="submit"]');
+                const originalContent = btn.innerHTML;
+                
+                document.getElementById(errorMsgId).classList.add('hidden');
+                document.getElementById(successMsgId).classList.add('hidden');
+                
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>...';
+                btn.disabled = true;
+                btn.classList.add('opacity-80', 'cursor-not-allowed');
+
+                const formData = new FormData(form);
+                
+                let message = `🔔 <b>Новая заявка на банкротство</b>\n\n`;
+                message += `💰 <b>Сумма долга:</b> ${formData.get('debt') || 'Не указано'}\n`;
+                message += `⏳ <b>Просрочка:</b> ${formData.get('delay') || 'Не указано'}\n`;
+                message += `🏠 <b>Имущество:</b> ${formData.get('property') || 'Не указано'}\n`;
+                message += `🏦 <b>Ипотека:</b> ${formData.get('mortgage') || 'Не указано'}\n`;
+                message += `👤 <b>Имя:</b> ${formData.get('name') || 'Не указано'}\n`;
+                message += `📞 <b>Телефон:</b> ${formData.get('phone') || 'Не указано'}`;
+
+                fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        chat_id: TG_CHAT_ID,
+                        text: message,
+                        parse_mode: 'HTML'
+                    })
+                }).then(response => {
+                    if (response.ok) {
+                        document.getElementById(successMsgId).classList.remove('hidden');
+                        btn.innerHTML = originalContent; 
+                        btn.disabled = false; 
+                        btn.classList.remove('opacity-80', 'cursor-not-allowed');
+                        form.reset();
+                        setTimeout(() => { document.getElementById(successMsgId).classList.add('hidden'); if(formId === 'leadFormMobile') closeLeadModal(); }, 4000);
+                    } else {
+                        throw new Error('Сетевая ошибка');
+                    }
+                }).catch(() => {
+                    btn.innerHTML = originalContent; 
+                    btn.disabled = false; 
+                    btn.classList.remove('opacity-80', 'cursor-not-allowed');
+                    const errorMsg = document.getElementById(errorMsgId); 
+                    errorMsg.classList.remove('hidden');
+                    setTimeout(() => { errorMsg.classList.add('hidden'); }, 8000);
+                });
+            });
+        }
+
+        setupFormSubmission('leadForm', 'formSuccessMessage', 'formErrorMessage');
+        setupFormSubmission('leadFormMobile', 'formSuccessMessageMobile', 'formErrorMessageMobile');
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const geoText = urlParams.get('geo') || urlParams.get('region') || urlParams.get('city');
+            if (geoText) {
+                document.querySelectorAll('.dynamic-geo').forEach(el => el.textContent = ' ' + geoText);
+            }
+        });
+    </script>
+</body>
+</html>
